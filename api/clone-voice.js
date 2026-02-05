@@ -373,16 +373,3 @@ async function pollSeedVC(endpoint, eventId, spaceUrl) {
   console.log(`   ❌ Seed-VC timed out after ${Math.round((Date.now() - start) / 1000)}s (${polls} polls)`);
   return null;
 }
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// ── Build proper Gradio FileData object ──
-// Gradio expects: { path, url, orig_name, meta: { _type: "gradio.FileData" } }
-function buildGradioFileData(url, filename) {
-  return {
-    path: url,
-    url: url,
-    orig_name: filename,
-    meta: { _type: "gradio.FileData" }
-  };
-}
