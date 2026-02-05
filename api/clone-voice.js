@@ -226,14 +226,21 @@ async function trySeedVC(songUrl, voiceUrl, gender, pitchShift) {
     console.log('   ⚠️ Wake ping timed out — trying anyway');
   }
 
+  // Build proper Gradio FileData objects
+  const sourceFileData = buildGradioFileData(songUrl, 'source_song.mp3');
+  const refFileData = buildGradioFileData(voiceUrl, 'voice_sample.wav');
+  
+  console.log('   Source:', sourceFileData.url);
+  console.log('   Reference:', refFileData.url);
+
   // ── Attempt 1: /predict_1 (V1 with F0 — best for singing voice) ──
   // Params: source_audio, ref_audio, diffusion_steps, length_adjust,
   //         inference_cfg_rate, f0_condition, auto_f0_adjust, pitch_shift
   try {
     console.log('   Trying /predict_1 (V1 singing model, F0 enabled)...');
     const result = await callSeedVCEndpoint(spaceUrl, 'predict_1', [
-      { url: songUrl },      // Source audio (the AI song)
-      { url: voiceUrl },     // Reference audio (user's voice)
+      sourceFileData,        // Source audio (the AI song)
+      refFileData,           // Reference audio (user's voice)
       10,                    // Diffusion steps (default 10, fast)
       1.0,                   // Length adjust (1.0 = same length)
       0.7,                   // Inference CFG rate
@@ -253,8 +260,8 @@ async function trySeedVC(songUrl, voiceUrl, gender, pitchShift) {
   try {
     console.log('   Trying /predict (V2 model, fallback)...');
     const result = await callSeedVCEndpoint(spaceUrl, 'predict', [
-      { url: songUrl },      // Source audio
-      { url: voiceUrl },     // Reference audio
+      sourceFileData,        // Source audio
+      refFileData,           // Reference audio
       30,                    // Diffusion steps (V2 default is 30)
       1.0,                   // Length adjust
       0.0,                   // Intelligibility CFG rate
@@ -368,3 +375,14 @@ async function pollSeedVC(endpoint, eventId, spaceUrl) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Build proper Gradio FileData object ──
+// Gradio expects: { path, url, orig_name, meta: { _type: "gradio.FileData" } }
+function buildGradioFileData(url, filename) {
+  return {
+    path: url,
+    url: url,
+    orig_name: filename,
+    meta: { _type: "gradio.FileData" }
+  };
+}
